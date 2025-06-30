@@ -1,12 +1,14 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use App\Http\Resources\PostResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use Illuminate\Http\Request;
 use App\Models\Post;
+use App\Models\User;
+
 
 class PostController extends Controller
 {
@@ -17,7 +19,7 @@ class PostController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return response()->json($posts);
+         return PostResource::collection($posts);
     }
 
     public function store(StorePostRequest $request)
@@ -29,7 +31,7 @@ class PostController extends Controller
 
         return response()->json([
             'message' => 'Post created successfully',
-            'post' => $post->load('user:id,name'),
+            'post' => new PostResource($post->load('user:id,name')),
         ], 201);
     }
 
@@ -43,7 +45,7 @@ class PostController extends Controller
         }
 
         $post->load(['user:id,name', 'comments.user:id,name']);
-        return response()->json($post);
+        return new PostResource($post);
     }
 
     public function update(UpdatePostRequest $request, Post $post)
@@ -58,7 +60,7 @@ class PostController extends Controller
 
         return response()->json([
             'message' => 'Post updated successfully',
-            'post' => $post->load('user:id,name'),
+            'post' => new PostResource($post->load('user:id,name')),
         ]);
     }
 
@@ -85,6 +87,21 @@ class PostController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return response()->json($posts);
+       return PostResource::collection($posts);
     }
+   
+    public function userPost(User $user, Post $post){
+
+       if($post->user_id !== $user->id) {
+        return response()->json([
+         'message' => 'Post not found for this user'
+      ], 404);
+        }
+      
+        $post->load(['user:id,name', 'comments.user:id,name']);
+
+        return new PostResource($post);
+    }
+
+
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CommentStoreRequest;
+use App\Http\Resources\CommentResource;
 use App\Models\Post;
 use App\Models\Comment;
 use Illuminate\Http\Request;
@@ -28,6 +29,35 @@ class CommentController extends Controller
             'comment' => $comment->load('user:id,name'),
         ]);
     }
+
+
+    public function index(Post $post){
+        $comments = $post->comments()->with('user:id,name')->get();
+        return CommentResource::collection($comments);
+
+    }
+
+     public function show(Comment $comment)
+     {
+        return new CommentResource($comment->load('user:id,name'));
+}
+
+    public function update(CommentStoreRequest $request, Comment $comment)
+    {
+        if ($comment->user_id !== auth()->id()) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $comment->update($request->validated());
+
+        return response()->json([
+            'message' => 'Comment updated successfully',
+            'post' => $comment->load('user:id,name'),
+        ]);
+    }
+
 
     public function destroy(Request $request, Comment $comment)
     {
